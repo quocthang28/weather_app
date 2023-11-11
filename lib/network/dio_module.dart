@@ -12,7 +12,6 @@ class AppDio {
       return _dio!;
     }
     BaseOptions options = BaseOptions(
-      baseUrl: 'http://10.0.2.2:3939',
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 15),
     );
