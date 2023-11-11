@@ -1,7 +1,8 @@
 class AppConstants {
   AppConstants._();
 
-  static const String apiKey = 'oPjaAgugW1TVSJsv0tSlIzB17tD3VolT';
+  static const String weatherApiKey = 'oPjaAgugW1TVSJsv0tSlIzB17tD3VolT';
+  static const String geoCodingApiKey = 'd19d76e96cdc450aa96739723c01e5b9';
 
   static Map<int, String> weatherMap = {
     0: "Unknown",
@@ -16,17 +17,5 @@ class AppConstants {
     4001: "Rain",
     4200: "Light Rain",
     4201: "Heavy Rain",
-    5000: "Snow",
-    5001: "Flurries",
-    5100: "Light Snow",
-    5101: "Heavy Snow",
-    6000: "Freezing Drizzle",
-    6001: "Freezing Rain",
-    6200: "Light Freezing Rain",
-    6201: "Heavy Freezing Rain",
-    7000: "Ice Pellets",
-    7101: "Heavy Ice Pellets",
-    7102: "Light Ice Pellets",
-    8000: "Thunderstorm"
   };
 }

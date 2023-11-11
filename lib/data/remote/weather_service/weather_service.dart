@@ -13,5 +13,5 @@ abstract class WeatherService {
   factory WeatherService(Dio dio) = _WeatherService;
 
   @GET(ApiEndpoints.getForecastByLocation)
-  Future<WeatherForecastJSON> getForecastByLocation(@Query("location") String coord, {@Query("apikey") String apiKey = AppConstants.apiKey});
+  Future<WeatherForecastJSON> getForecastByLocation(@Query("location") String coord, {@Query("apikey") String apiKey = AppConstants.weatherApiKey});
 }

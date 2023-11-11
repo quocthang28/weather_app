@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'weather_service.dart';
+part of 'geocoding_service.dart';
 
 // **************************************************************************
 // RetrofitGenerator
@@ -8,12 +8,12 @@ part of 'weather_service.dart';
 
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers
 
-class _WeatherService implements WeatherService {
-  _WeatherService(
+class _GeocodingService implements GeocodingService {
+  _GeocodingService(
     this._dio, {
     this.baseUrl,
   }) {
-    baseUrl ??= 'https://api.tomorrow.io/v4/weather/';
+    baseUrl ??= 'https://api.opencagedata.com/';
   }
 
   final Dio _dio;
@@ -21,26 +21,26 @@ class _WeatherService implements WeatherService {
   String? baseUrl;
 
   @override
-  Future<WeatherForecastJSON> getForecastByLocation(
-    String coord, {
-    String apiKey = AppConstants.weatherApiKey,
+  Future<GeoData> getGeocodingData(
+    String q, {
+    String key = AppConstants.geoCodingApiKey,
   }) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
-      r'location': coord,
-      r'apikey': apiKey,
+      r'q': q,
+      r'key': key,
     };
     final _headers = <String, dynamic>{};
     final Map<String, dynamic>? _data = null;
-    final _result = await _dio.fetch<Map<String, dynamic>>(
-        _setStreamType<WeatherForecastJSON>(Options(
+    final _result =
+        await _dio.fetch<Map<String, dynamic>>(_setStreamType<GeoData>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
             .compose(
               _dio.options,
-              '/forecast',
+              '/geocode/v1/json',
               queryParameters: queryParameters,
               data: _data,
             )
@@ -49,7 +49,7 @@ class _WeatherService implements WeatherService {
               _dio.options.baseUrl,
               baseUrl,
             ))));
-    final value = WeatherForecastJSON.fromJson(_result.data!);
+    final value = GeoData.fromJson(_result.data!);
     return value;
   }
 

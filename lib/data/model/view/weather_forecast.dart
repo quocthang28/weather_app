@@ -11,7 +11,7 @@ class WeatherForecast {
   int? weatherCode;
   DateTime? sunriseTime;
   DateTime? sunsetTime;
-  int? uvIndexAvg;
+  //int? uvIndexAvg;
   String? uvIndexDescription;
 
   WeatherForecast({
@@ -24,7 +24,7 @@ class WeatherForecast {
     this.weatherCode,
     this.sunriseTime,
     this.sunsetTime,
-    this.uvIndexAvg,
+    //this.uvIndexAvg,
     this.uvIndexDescription,
   });
 
@@ -39,7 +39,7 @@ class WeatherForecast {
       weatherCode: fullForecast.values?.weatherCodeMax,
       sunriseTime:fullForecast.values?.sunriseTime?.toLocal(),
       sunsetTime: fullForecast.values?.sunsetTime?.toLocal(),
-      uvIndexAvg: fullForecast.values?.uvIndexAvg,
+      //uvIndexAvg: fullForecast.values?.uvIndexAvg,
       uvIndexDescription: getUVIndexDescription(fullForecast.values?.uvIndexAvg ?? 0)
     );
   }

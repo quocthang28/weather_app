@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
 import 'package:location/location.dart';
 import 'package:lottie/lottie.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:velocity_x/velocity_x.dart';
+import 'package:weather_app/bloc/geocoding_bloc/geocoding_bloc.dart';
 import 'package:weather_app/bloc/network_connectivity_bloc/network_connectivity_bloc.dart';
 import 'package:weather_app/bloc/weather_bloc/weather_bloc.dart';
 import 'package:weather_app/di/dependencies_locator.dart';
+import 'package:weather_app/repository/geocoding_repository.dart';
 import 'package:weather_app/repository/weather_repository.dart';
 import 'package:weather_app/ui/common_widgets/glass_container.dart';
 import 'package:weather_app/ui/common_widgets/loading_indicator.dart';
@@ -24,12 +25,11 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'Weather app',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -38,8 +38,9 @@ class MyApp extends StatelessWidget {
         providers: [
           BlocProvider<NetworkConnectivityBloc>(create: (context) => NetworkConnectivityBloc()..add(InitializeConCheckerEvent())),
           BlocProvider<WeatherBloc>(create: (context) => WeatherBloc(weatherRepository: GetIt.I<IWeatherRepository>())),
+          BlocProvider<GeocodingBloc>(create: (context) => GeocodingBloc(geocodingRepository: GetIt.I<IGeocodingRepository>())),
         ],
-        child: const MyHomePage(title: 'Flutter Demo Home Page'),
+        child: const MyHomePage(title: ''),
       ),
     );
   }
@@ -55,6 +56,28 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  String currentLocation = '';
+  TextEditingController textFieldController = TextEditingController();
+  bool once = true;
+
+  void getWeatherDataOnStartup() async {
+    showLoadingIndicator(context);
+    LocationData locationData = await Location().getLocation();
+    var q = "${locationData.latitude}+${locationData.longitude}";
+    context.read<GeocodingBloc>().add(GetCoordWithLocationName(locationName: q));
+  }
+
+  @override
+  void didChangeDependencies() {
+    Future.delayed(Duration.zero, () {
+      if (once) {
+        getWeatherDataOnStartup();
+        once = false;
+      }
+    });
+    super.didChangeDependencies();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocListener(
@@ -93,6 +116,27 @@ class _MyHomePageState extends State<MyHomePage> {
             }
           },
         ),
+        BlocListener<GeocodingBloc, GeocodingState>(
+          listener: (context, state) {
+            if (state.status == GeocodingApiStatus.emptyResponse) {
+              Fluttertoast.showToast(
+                  msg: 'Please enter a valid location',
+                  toastLength: Toast.LENGTH_LONG,
+                  gravity: ToastGravity.CENTER,
+                  textColor: Colors.grey,
+                  fontSize: 12.0);
+            } else if (state.status == GeocodingApiStatus.loaded) {
+              var coord = state.geoData!.split("|");
+              context.read<WeatherBloc>().add(GetWeatherForecastEvent(lat: coord[0], long: coord[1]));
+
+              if (coord.length == 3) {
+                setState(() {
+                  currentLocation = coord[2];
+                });
+              }
+            }
+          },
+        ),
       ],
       child: Scaffold(
         body: Container(
@@ -107,153 +151,154 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              (context.mq.viewPadding.top * 2).heightBox,
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.location_on_outlined, color: Colors.grey.shade50, size: 22),
-                  4.widthBox,
-                  'Ho Chi Minh City'.text.bold.size(22).gray50.make(),
-                  const Spacer(),
-                  Icon(Icons.search_outlined, color: Colors.grey.shade50, size: 30).pOnly(right: 8).onTap(() {
-                    showSearch(
-                      context: context,
-                      delegate: CustomSearchDelegate(),
-                    );
-                  }),
-                ],
-              ).px(16),
-              BlocBuilder<WeatherBloc, WeatherState>(
-                builder: (context, state) {
-                  if (state.status == WeatherForecastApiStatus.loaded) {
-                    var todayForecast = state.weatherForecasts?.first;
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                (context.mq.viewPadding.top * 2).heightBox,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.location_on_outlined, color: Colors.grey.shade50, size: 22),
+                    4.widthBox,
+                    currentLocation.text.bold.size(22).gray50.make(),
+                    const Spacer(),
+                  ],
+                ).px(16),
+                BlocBuilder<WeatherBloc, WeatherState>(
+                  builder: (context, state) {
+                    if (state.status == WeatherForecastApiStatus.loaded) {
+                      var todayForecast = state.weatherForecasts?.first;
 
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        20.heightBox,
-                        Row(
-                          children: [
-                            GlassContainer(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: <Widget>[
-                                  '${todayForecast?.temperature}°'.text.bold.size(70).gray50.make(),
-                                  '${todayForecast?.weatherDescription}'.text.size(15).gray50.make(),
-                                  'UV index: ${todayForecast?.uvIndexDescription}'.text.size(15).gray50.make(),
-                                ],
-                              ).p12(),
-                            ).pOnly(left: 16),
-                            const Spacer(),
-                            Lottie.asset('assets/sun-raining.json', width: 120, height: 120),
-                            const Spacer(),
-                          ],
-                        ),
-                        12.heightBox,
-                        GlassContainer(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: <Widget>[
-                              Column(
-                                children: <Widget>[
-                                  WeatherDetail(
-                                    icon: Icons.water_drop_outlined,
-                                    label: 'Humidity:',
-                                    value: "${todayForecast?.humidity?.round()}%",
-                                  ),
-                                  5.heightBox,
-                                  WeatherDetail(
-                                    icon: Icons.percent,
-                                    label: 'Chance of rain:',
-                                    value: "${todayForecast?.chanceOfRain?.round()}%",
-                                  ),
-                                  5.heightBox,
-                                  WeatherDetail(icon: Icons.air_outlined, label: 'Wind speed:', value: "${todayForecast?.windSpeed?.round()}km/h"),
-                                  5.heightBox,
-                                  WeatherDetail(
-                                      icon: Icons.sunny,
-                                      label: 'Sunrise:',
-                                      value: "${todayForecast?.sunriseTime?.hour}:${todayForecast?.sunriseTime?.minute}"),
-                                  5.heightBox,
-                                  WeatherDetail(
-                                      icon: Icons.sunny_snowing,
-                                      label: 'Sunset:',
-                                      value: "${todayForecast?.sunsetTime?.hour}:${todayForecast?.sunsetTime?.minute}"),
-                                ],
-                              ),
-                            ],
-                          ).p12(),
-                        ).p16(),
-                        12.heightBox,
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: List.generate(
-                              state.weatherForecasts?.length ?? 0,
-                              (index) => GlassContainer(
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          20.heightBox,
+                          Row(
+                            children: [
+                              GlassContainer(
                                 child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.start,
                                   children: <Widget>[
-                                    5.heightBox,
-                                    '${state.weatherForecasts?[index].time?.day} / ${state.weatherForecasts?[index].time?.month}'
-                                        .text
-                                        .bold
-                                        .size(14)
-                                        .gray50
-                                        .make(),
-                                    12.heightBox,
-                                    Lottie.asset('assets/sun-raining.json', width: 30, height: 30),
-                                    '${state.weatherForecasts?[index].temperature?.round()}°'.text.bold.size(18).gray50.make(),
-                                    Row(
-                                      children: <Widget>[
-                                        const Icon(Icons.water_drop_outlined, color: Colors.white, size: 14),
-                                        "${state.weatherForecasts?[index].humidity?.round()}%".text.size(16).gray50.make(),
-                                      ],
-                                    ),
+                                    '${todayForecast?.temperature}°'.text.bold.size(70).gray50.make(),
+                                    '${todayForecast?.weatherDescription}'.text.size(15).gray50.make(),
+                                    'UV index: ${todayForecast?.uvIndexDescription}'.text.size(15).gray50.make(),
                                   ],
-                                ).p(12),
-                              ).pOnly(left: 16, right: index + 1 == state.weatherForecasts?.length ? 16 : 0),
+                                ).p12(),
+                              ).pOnly(left: 16),
+                              const Spacer(),
+                              Lottie.asset('assets/${todayForecast?.weatherCode ?? 1000}.json', width: 120, height: 120),
+                              const Spacer(),
+                            ],
+                          ),
+                          12.heightBox,
+                          GlassContainer(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: <Widget>[
+                                Column(
+                                  children: <Widget>[
+                                    WeatherDetail(
+                                      icon: Icons.water_drop_outlined,
+                                      label: 'Humidity:',
+                                      value: "${todayForecast?.humidity?.round()}%",
+                                    ),
+                                    5.heightBox,
+                                    WeatherDetail(
+                                      icon: Icons.percent,
+                                      label: 'Chance of rain:',
+                                      value: "${todayForecast?.chanceOfRain?.round()}%",
+                                    ),
+                                    5.heightBox,
+                                    WeatherDetail(icon: Icons.air_outlined, label: 'Wind speed:', value: "${todayForecast?.windSpeed?.round()}km/h"),
+                                    5.heightBox,
+                                    WeatherDetail(
+                                        icon: Icons.sunny,
+                                        label: 'Sunrise:',
+                                        value: "${todayForecast?.sunriseTime?.hour}:${todayForecast?.sunriseTime?.minute}"),
+                                    5.heightBox,
+                                    WeatherDetail(
+                                        icon: Icons.sunny_snowing,
+                                        label: 'Sunset:',
+                                        value: "${todayForecast?.sunsetTime?.hour}:${todayForecast?.sunsetTime?.minute}"),
+                                  ],
+                                ),
+                              ],
+                            ).p12(),
+                          ).p16(),
+                          12.heightBox,
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: List.generate(
+                                state.weatherForecasts?.length ?? 0,
+                                (index) => GlassContainer(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: <Widget>[
+                                      5.heightBox,
+                                      '${state.weatherForecasts?[index].time?.day} / ${state.weatherForecasts?[index].time?.month}'
+                                          .text
+                                          .bold
+                                          .size(14)
+                                          .gray50
+                                          .make(),
+                                      12.heightBox,
+                                      Lottie.asset('assets/${state.weatherForecasts?[index].weatherCode ?? 1000}.json', width: 30, height: 30),
+                                      '${state.weatherForecasts?[index].temperature?.round()}°'.text.bold.size(18).gray50.make(),
+                                      Row(
+                                        children: <Widget>[
+                                          const Icon(Icons.water_drop_outlined, color: Colors.white, size: 14),
+                                          "${state.weatherForecasts?[index].humidity?.round()}%".text.size(16).gray50.make(),
+                                        ],
+                                      ),
+                                    ],
+                                  ).p(12),
+                                ).pOnly(left: 16, right: index + 1 == state.weatherForecasts?.length ? 16 : 0),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  } else {
-                    return const SizedBox.shrink();
-                  }
-                },
-              ),
-            ],
+                        ],
+                      );
+                    } else {
+                      return const SizedBox.shrink();
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
         ),
         floatingActionButton: FloatingActionButton(
           shape: const CircleBorder(),
           onPressed: () async {
-            if (await Permission.locationWhenInUse.request().isGranted) {
+            // if (await Permission.locationWhenInUse.request().isGranted) {
+            //   showLoadingIndicator(context);
+            //   LocationData locationData = await Location().getLocation();
+            //   context
+            //       .read<WeatherBloc>()
+            //       .add(GetWeatherForecastEvent(lat: locationData.latitude.toString(), long: locationData.longitude.toString()));
+            // } else {
+            //   Fluttertoast.showToast(
+            //       msg: 'Please allow location permission in order to get weather data of your current place.',
+            //       toastLength: Toast.LENGTH_LONG,
+            //       gravity: ToastGravity.CENTER,
+            //       textColor: Colors.grey,
+            //       fontSize: 12.0);
+            // }
+            String? location = await showTextFieldDialog(context);
+            print(location ?? " ");
+            if (location != null) {
               showLoadingIndicator(context);
-              LocationData locationData = await Location().getLocation();
-              context
-                  .read<WeatherBloc>()
-                  .add(GetWeatherForecastEvent(lat: locationData.latitude.toString(), long: locationData.longitude.toString()));
-            } else {
-              Fluttertoast.showToast(
-                  msg: 'Please allow location permission in order to get weather data of your current place.',
-                  toastLength: Toast.LENGTH_LONG,
-                  gravity: ToastGravity.CENTER,
-                  textColor: Colors.grey,
-                  fontSize: 12.0);
+              context.read<GeocodingBloc>().add(GetCoordWithLocationName(locationName: location));
             }
           },
           backgroundColor: Colors.grey.shade50,
-          child: const Icon(Icons.location_searching_outlined),
+          child: const Icon(Icons.search_outlined),
         ), // This trailing comma makes auto-formatting nicer for build methods.
       ),
     );
