@@ -6,7 +6,6 @@ import 'package:weather_app/data/remote/endpoints.dart';
 
 part 'geocoding_service.g.dart';
 
-//https://api.opencagedata.com/geocode/v1/json?q=ho+chi+minh&key=d19d76e96cdc450aa96739723c01e5b9
 @RestApi(
     baseUrl: "https://api.opencagedata.com/"
 )

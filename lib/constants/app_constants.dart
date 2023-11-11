@@ -4,7 +4,7 @@ class AppConstants {
   static const String weatherApiKey = 'oPjaAgugW1TVSJsv0tSlIzB17tD3VolT';
   static const String geoCodingApiKey = 'd19d76e96cdc450aa96739723c01e5b9';
 
-  static Map<int, String> weatherMap = {
+  static Map<double, String> weatherMap = {
     0: "Unknown",
     1000: "Clear, Sunny",
     1100: "Mostly Clear",

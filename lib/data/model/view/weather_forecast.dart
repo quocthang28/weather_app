@@ -3,7 +3,7 @@ import 'package:weather_app/data/model/json/weather_forecast_model.dart';
 
 class WeatherForecast {
   DateTime? time;
-  int? temperature;
+  double? temperature;
   double? humidity;
   double? windSpeed;
   String? weatherDescription;
@@ -11,7 +11,6 @@ class WeatherForecast {
   int? weatherCode;
   DateTime? sunriseTime;
   DateTime? sunsetTime;
-  //int? uvIndexAvg;
   String? uvIndexDescription;
 
   WeatherForecast({
@@ -24,23 +23,21 @@ class WeatherForecast {
     this.weatherCode,
     this.sunriseTime,
     this.sunsetTime,
-    //this.uvIndexAvg,
     this.uvIndexDescription,
   });
 
   factory WeatherForecast.fromFullForecast(Daily fullForecast) {
     return WeatherForecast(
       time: fullForecast.time,
-      temperature: fullForecast.values?.temperatureAvg?.round(),
+      temperature: fullForecast.values?.temperatureAvg?.roundToDouble(),
       humidity: fullForecast.values?.humidityAvg,
       windSpeed: fullForecast.values?.windSpeedAvg,
       weatherDescription: getWeatherDescription(fullForecast.values?.weatherCodeMax ?? 0),
       chanceOfRain: calculateChanceOfRain(fullForecast.values!),
-      weatherCode: fullForecast.values?.weatherCodeMax,
+      weatherCode: fullForecast.values?.weatherCodeMax?.toInt(),
       sunriseTime:fullForecast.values?.sunriseTime?.toLocal(),
       sunsetTime: fullForecast.values?.sunsetTime?.toLocal(),
-      //uvIndexAvg: fullForecast.values?.uvIndexAvg,
-      uvIndexDescription: getUVIndexDescription(fullForecast.values?.uvIndexAvg ?? 0)
+      uvIndexDescription: getUVIndexDescription(fullForecast.values?.uvIndexAvg?.toInt() ?? 0)
     );
   }
 
@@ -49,7 +46,7 @@ class WeatherForecast {
     return precipitationProbability.toDouble();
   }
 
-  static String getWeatherDescription(int? key) {
+  static String getWeatherDescription(double? key) {
     return AppConstants.weatherMap[key] ?? "Unknown";
   }
 

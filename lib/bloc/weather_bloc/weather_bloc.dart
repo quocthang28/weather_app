@@ -19,6 +19,7 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
       }
 
       List<WeatherForecast> forecasts = [];
+      print(data);
 
       data?.timelines?.daily?.forEach((e) {
         forecasts.add(WeatherForecast.fromFullForecast(e));

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:weather_app/data/model/json/weather_forecast_model.dart';
 import 'package:weather_app/data/remote/weather_service/weather_service.dart';
 
@@ -10,7 +9,7 @@ abstract class IWeatherRepository extends Repository {
   Future<(WeatherForecastJSON?, Object?)> getForecastByLocation(String lat, String long);
 }
 
-class WeatherRepository extends IWeatherRepository {
+class WeatherRepository implements IWeatherRepository {
   WeatherRepository({required this.weatherService});
 
   final WeatherService weatherService;

@@ -22,11 +22,9 @@ class AppDio {
     _dio!.interceptors.add(RetryInterceptor(
       dio: dio,
       logPrint: print,
-      retries: 3,
+      retries: 1,
       retryDelays: const [
-        Duration(seconds: 5),
-        Duration(seconds: 10),
-        Duration(seconds: 15),
+        Duration(seconds: 1),
       ],
       //retryableExtraStatuses: {status401Unauthorized},
     ));

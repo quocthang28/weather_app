@@ -7,7 +7,7 @@ abstract class IGeocodingRepository extends Repository {
   Future<(GeoData?, Object?)> getGeocodingData(String q);
 }
 
-class GeocodingRepository extends IGeocodingRepository {
+class GeocodingRepository implements IGeocodingRepository {
   GeocodingRepository({required this.geocodingService});
 
   final GeocodingService geocodingService;

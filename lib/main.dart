@@ -13,6 +13,7 @@ import 'package:weather_app/bloc/weather_bloc/weather_bloc.dart';
 import 'package:weather_app/di/dependencies_locator.dart';
 import 'package:weather_app/repository/geocoding_repository.dart';
 import 'package:weather_app/repository/weather_repository.dart';
+import 'package:weather_app/ui/common_widgets/app_toast.dart';
 import 'package:weather_app/ui/common_widgets/glass_container.dart';
 import 'package:weather_app/ui/common_widgets/loading_indicator.dart';
 import 'package:weather_app/ui/search.dart';
@@ -57,7 +58,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String currentLocation = '';
-  TextEditingController textFieldController = TextEditingController();
+  String userInputLocation = '';
   bool once = true;
 
   void getWeatherDataOnStartup() async {
@@ -113,27 +114,34 @@ class _MyHomePageState extends State<MyHomePage> {
           listener: (context, state) {
             if (state.status == WeatherForecastApiStatus.loaded) {
               Navigator.pop(context);
+            } else if (state.status == WeatherForecastApiStatus.error) {
+              Navigator.pop(context);
+              showToast('Error fetching weather data');
             }
           },
         ),
         BlocListener<GeocodingBloc, GeocodingState>(
           listener: (context, state) {
             if (state.status == GeocodingApiStatus.emptyResponse) {
-              Fluttertoast.showToast(
-                  msg: 'Please enter a valid location',
-                  toastLength: Toast.LENGTH_LONG,
-                  gravity: ToastGravity.CENTER,
-                  textColor: Colors.grey,
-                  fontSize: 12.0);
+              Navigator.pop(context);
+              showToast('Please enter a valid location');
             } else if (state.status == GeocodingApiStatus.loaded) {
               var coord = state.geoData!.split("|");
               context.read<WeatherBloc>().add(GetWeatherForecastEvent(lat: coord[0], long: coord[1]));
-
               if (coord.length == 3) {
-                setState(() {
-                  currentLocation = coord[2];
-                });
+                if (coord[2] != "null") {
+                  setState(() {
+                    currentLocation = coord[2];
+                  });
+                } else {
+                  setState(() {
+                    currentLocation = userInputLocation;
+                  });
+                }
               }
+            } else if (state.status == GeocodingApiStatus.error) {
+              Navigator.pop(context);
+              showToast('Error fetching weather data');
             }
           },
         ),
@@ -182,7 +190,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: <Widget>[
-                                    '${todayForecast?.temperature}°'.text.bold.size(70).gray50.make(),
+                                    '${todayForecast?.temperature?.toInt()}°'.text.bold.size(70).gray50.make(),
                                     '${todayForecast?.weatherDescription}'.text.size(15).gray50.make(),
                                     'UV index: ${todayForecast?.uvIndexDescription}'.text.size(15).gray50.make(),
                                   ],
@@ -276,30 +284,17 @@ class _MyHomePageState extends State<MyHomePage> {
         floatingActionButton: FloatingActionButton(
           shape: const CircleBorder(),
           onPressed: () async {
-            // if (await Permission.locationWhenInUse.request().isGranted) {
-            //   showLoadingIndicator(context);
-            //   LocationData locationData = await Location().getLocation();
-            //   context
-            //       .read<WeatherBloc>()
-            //       .add(GetWeatherForecastEvent(lat: locationData.latitude.toString(), long: locationData.longitude.toString()));
-            // } else {
-            //   Fluttertoast.showToast(
-            //       msg: 'Please allow location permission in order to get weather data of your current place.',
-            //       toastLength: Toast.LENGTH_LONG,
-            //       gravity: ToastGravity.CENTER,
-            //       textColor: Colors.grey,
-            //       fontSize: 12.0);
-            // }
             String? location = await showTextFieldDialog(context);
             print(location ?? " ");
             if (location != null) {
+              userInputLocation = location;
               showLoadingIndicator(context);
               context.read<GeocodingBloc>().add(GetCoordWithLocationName(locationName: location));
             }
           },
           backgroundColor: Colors.grey.shade50,
           child: const Icon(Icons.search_outlined),
-        ), // This trailing comma makes auto-formatting nicer for build methods.
+        ),
       ),
     );
   }
