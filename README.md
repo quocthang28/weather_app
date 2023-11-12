@@ -12,6 +12,8 @@ To run code, first clone the project and run follwing commands:
 
 Requirement: Flutter SDK version 3.10.3, Dart SDK version 3.0.3
 
+Demo video: https://drive.google.com/file/d/1q5LwNG4lCFUuoHkm4OQHJnUIGBAomWS8/view?usp=sharing
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
