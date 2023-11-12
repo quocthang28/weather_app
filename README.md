@@ -10,6 +10,6 @@ To run code, first clone the project and run following commands:
 2. flutter pub get
 3. dart run build_runner build --delete-conflicting-outputs 
 
-Requirement: Flutter SDK version 3.10.3, Dart SDK version 3.0.3
+Requirement: Flutter SDK version 3.10.3, Dart SDK version 3.0.3, run on Android
 
 Demo video: https://drive.google.com/file/d/1q5LwNG4lCFUuoHkm4OQHJnUIGBAomWS8/view?usp=sharing
