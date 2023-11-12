@@ -2,7 +2,7 @@
 
 WEATHER APP:
 - Retrieve weather data in current location
-- Get weather data from other location
+- Get weather data from custom user input
 - View today's forecast and next 5 days
 
 To run code, first clone the project and run following commands:
