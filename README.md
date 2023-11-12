@@ -5,7 +5,7 @@ WEATHER APP:
 - Get weather data from other location
 - View today's forecast and next 5 days
 
-To run code, first clone the project and run follwing commands:
+To run code, first clone the project and run following commands:
 1. flutter clean
 2. flutter pub get
 3. dart run build_runner build --delete-conflicting-outputs 
