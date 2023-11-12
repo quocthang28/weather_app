@@ -1,6 +1,9 @@
 # weather_app
 
-A new Flutter project.
+WEATHER APP:
+- Retrieve weather data in current location
+- Get weather data from other location
+- View today's forecast and next 5 days
 
 ## Getting Started
 
